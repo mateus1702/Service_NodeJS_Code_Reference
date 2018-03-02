@@ -8,17 +8,23 @@ var UserSchema = new Schema({
     type: String,
     required: 'Name required'
   },
-  Created_date: {
-    type: Date,
-    default: Date.now
-  },
-  status: {
-    type: [{
-      type: String,
-      enum: ['pending', 'ongoing', 'completed']
-    }],
-    default: ['pending']
-  }
+  Tasks: [{ type: Schema.Types.ObjectId, ref: 'Task' }]
 });
 
-module.exports = mongoose.model('Tasks', TaskSchema);
+
+
+
+if (!UserSchema.options.toJSON)
+  UserSchema.options.toJSON = {};
+
+UserSchema.options.toJSON.transform = function (doc, ret, options) {
+  ret.Id = ret._id;
+
+  delete ret._id;
+  delete ret.__v;
+  return ret;
+}
+
+
+
+module.exports = mongoose.model('User', UserSchema);

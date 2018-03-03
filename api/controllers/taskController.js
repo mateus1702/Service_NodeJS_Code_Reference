@@ -2,50 +2,71 @@
 
 
 var mongoose = require('mongoose'),
+  User = mongoose.model('User'),
   Task = mongoose.model('Task');
 
 exports.list = function(req, res) {
-  Task.find({}, function(err, task) {
+  Task.find({ UserId: req.params.userId }, function(err, task) {
     if (err)
-      res.send(err);
+      res.status(500).send(err);
     res.json(task);
   });
 };
 
 exports.create = function(req, res) {
-  var new_task = new Task(req.body);
-  new_task.User = req.body.UserId;
-  new_task.save(function(err, task) {
-    if (err)
-      res.send(err);
-    res.json(task);
+  User.findOne({ Id: req.body.UserId }, function(err, user) {
+    var new_task = new Task({
+      Name: req.body.Name,
+      Done: req.body.Done,
+      Date: req.body.Date,
+      UserId: req.body.UserId,
+      User: user._id
+    });
+    new_task.save(function(err, task) {
+      if (err)
+        res.status(500).send(err);
+      res.send(new_task.Id.toString());
+    });
   });
 };
 
 exports.read = function(req, res) {
-  Task.findById(req.params.taskId).
+  Task.findOne({ Id: req.params.taskId }).
   populate('User').
   exec(function (err, task) {
     if (err)
-      res.send(err);
+      res.status(500).send(err);
     res.json(task);
   });
 };
 
 exports.update = function(req, res) {
-  Task.findOneAndUpdate({_id: req.params.taskId}, req.body, {new: true}, function(err, task) {
+  var fieldsToUpdate = {
+    Name: req.body.Name,
+    Done: req.body.Done,
+    Date: req.body.Date,
+  };
+  Task.findOneAndUpdate({ Id: req.params.taskId }, fieldsToUpdate, {new: true}, function(err, task) {
     if (err)
-      res.send(err);
-    res.json(task);
+      res.status(500).send(err);
+    res.send('');
   });
 };
 
 exports.delete = function(req, res) {
-  Task.remove({
-    _id: req.params.taskId
-  }, function(err, task) {
+  Task.findOne({ Id: req.params.taskId }, function(err, task) {
     if (err)
-      res.send(err);
-    res.json({ message: 'Task successfully deleted' });
+      res.status(500).send(err);
+      if (!task)
+        res.json(null);
+      else {
+        Task.remove({
+          Id: req.params.taskId
+        }, function(err, user) {
+          if (err)
+            res.status(500).send(err);
+          res.send('');
+        });
+      }
   });
 };
